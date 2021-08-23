@@ -27,7 +27,18 @@ import org.kde.plasma.components 3.0 as PlasmaComponents3
 
 import "../components"
 
-SessionManagementScreen {
+Item {
+    id: root
+
+    /*
+     * Any message to be displayed to the user, visible above the text fields
+     */
+    property alias notificationMessage: notificationsLabel.text
+
+    /*
+     * Self explanatory
+     */
+    property int fontSize: PlasmaCore.Theme.defaultFont.pointSize + 2
 
     property Item mainPasswordBox: passwordBox
     property bool lockScreenUiVisible: false
@@ -40,6 +51,7 @@ SessionManagementScreen {
      * If username field is visible, it will be taken from that, otherwise from the "name" property of the currentIndex
      */
     signal loginRequest(string password)
+    signal switchUserRequest()
 
     function startLogin() {
         var password = passwordBox.text
@@ -51,8 +63,49 @@ SessionManagementScreen {
         loginRequest(password);
     }
 
+    function switchUser() {
+        switchuserButton.forceActiveFocus();
+        switchUserRequest();
+    }
+
+    PlasmaComponents3.Label {
+        id: ferenuserName
+        anchors {
+            left: parent.left
+            right: ferenuserPicture.left
+            verticalCenter: parent.verticalCenter
+            rightMargin: PlasmaCore.Units.largeSpacing
+        }
+        font.pointSize: Math.max(1.6 * theme.defaultFont.pointSize)
+        height: implicitHeight // work around stupid bug in Plasma Components that sets the height
+        text: kscreenlocker_userName
+        style: softwareRendering ? Text.Outline : Text.Normal
+        styleColor: softwareRendering ? PlasmaCore.ColorScope.backgroundColor : "transparent" //no outline, doesn't matter
+        elide: Text.ElideRight
+        horizontalAlignment: Text.AlignRight
+    }
+
+    UserPicture {
+        id: ferenuserPicture
+        anchors {
+            verticalCenter: parent.verticalCenter
+            horizontalCenter: parent.horizontalCenter
+        }
+        width: PlasmaCore.Units.gridUnit * 8
+        avatarPath: kscreenlocker_userImage || ""
+        iconSource: "user-identity"
+        visible: true
+
+    }
+
     RowLayout {
+        id: passwordControls
         Layout.fillWidth: true
+        anchors {
+            left: ferenuserPicture.right
+            leftMargin: PlasmaCore.Units.largeSpacing
+            verticalCenter: parent.verticalCenter
+        }
 
         PlasmaComponents3.TextField {
             id: passwordBox
@@ -65,6 +118,7 @@ SessionManagementScreen {
             inputMethodHints: Qt.ImhHiddenText | Qt.ImhSensitiveData | Qt.ImhNoAutoUppercase | Qt.ImhNoPredictiveText
             enabled: !authenticator.graceLocked
             revealPasswordButtonShown: true
+            height: implicitHeight
 
             // In Qt this is implicitly active based on focus rather than visibility
             // in any other application having a focussed invisible object would be weird
@@ -75,19 +129,6 @@ SessionManagementScreen {
             onAccepted: {
                 if (lockScreenUiVisible) {
                     startLogin();
-                }
-            }
-
-            //if empty and left or right is pressed change selection in user switch
-            //this cannot be in keys.onLeftPressed as then it doesn't reach the password box
-            Keys.onPressed: {
-                if (event.key == Qt.Key_Left && !text) {
-                    userList.decrementCurrentIndex();
-                    event.accepted = true
-                }
-                if (event.key == Qt.Key_Right && !text) {
-                    userList.incrementCurrentIndex();
-                    event.accepted = true
                 }
             }
 
@@ -109,6 +150,34 @@ SessionManagementScreen {
             icon.name: "go-next"
 
             onClicked: startLogin()
+        }
+    }
+
+    ColumnLayout {
+        anchors {
+            top: passwordControls.bottom
+            topMargin: PlasmaCore.Units.smallSpacing
+            left: passwordControls.left
+        }
+
+        PlasmaComponents3.Label {
+            id: notificationsLabel
+            font.pointSize: root.fontSize
+            Layout.maximumWidth: PlasmaCore.Units.gridUnit * 16
+            Layout.alignment: Qt.AlignHCenter
+            Layout.fillWidth: true
+            horizontalAlignment: Text.AlignHCenter
+            wrapMode: Text.WordWrap
+            font.italic: true
+            visible: text != "" ? true : false
+        }
+
+        PlasmaComponents3.ToolButton {
+            id: switchuserButton
+            Accessible.name: i18nd("plasma_lookandfeel_org.kde.lookandfeel", "Switch User")
+            text: i18nd("plasma_lookandfeel_org.kde.lookandfeel", "Switch User")
+            Layout.preferredHeight: passwordBox.implicitHeight
+            onClicked: switchUser()
         }
     }
 }
