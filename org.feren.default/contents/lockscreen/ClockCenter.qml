@@ -26,22 +26,20 @@ ColumnLayout {
     readonly property bool softwareRendering: GraphicsInfo.api === GraphicsInfo.Software
 
     Label {
-        id: greetLbl
-        text: i18nd("ferenos_qt_experience", "Hello there, it is")
-        color: ColorScope.textColor
-        style: softwareRendering ? Text.Outline : Text.Normal
-        styleColor: softwareRendering ? ColorScope.backgroundColor : "transparent" //no outline, doesn't matter
-        font.pointSize: theme.defaultFont.pointSize
-        Layout.alignment: Qt.AlignLeft
-    }
-    Label {
         text: Qt.formatTime(timeSource.data["Local"]["DateTime"])
         color: ColorScope.textColor
         style: softwareRendering ? Text.Outline : Text.Normal
         styleColor: softwareRendering ? ColorScope.backgroundColor : "transparent" //no outline, doesn't matter
+        font.pointSize: 4 * theme.defaultFont.pointSize
+        Layout.alignment: Qt.AlignHCenter
+    }
+    Label {
+        text: Qt.formatDate(timeSource.data["Local"]["DateTime"], Qt.DefaultLocaleLongDate)
+        color: ColorScope.textColor
+        style: softwareRendering ? Text.Outline : Text.Normal
+        styleColor: softwareRendering ? ColorScope.backgroundColor : "transparent" //no outline, doesn't matter
         font.pointSize: 2 * theme.defaultFont.pointSize
-        Layout.alignment: Qt.AlignLeft
-        anchors.top: greetLbl.bottom
+        Layout.alignment: Qt.AlignHCenter
     }
     DataSource {
         id: timeSource

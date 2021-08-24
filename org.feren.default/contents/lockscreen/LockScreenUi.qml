@@ -36,6 +36,7 @@ PlasmaCore.ColorScope {
     // See https://bugs.kde.org/show_bug.cgi?id=398317
     readonly property bool softwareRendering: GraphicsInfo.api === GraphicsInfo.Software
     readonly property bool lightBackground: Math.max(PlasmaCore.ColorScope.backgroundColor.r, PlasmaCore.ColorScope.backgroundColor.g, PlasmaCore.ColorScope.backgroundColor.b) > 0.5
+    property bool showClock: typeof config === "undefined" || typeof config.showClock === "undefined" || config.showClock === true
 
     colorGroup: PlasmaCore.Theme.ComplementaryColorGroup
 
@@ -87,11 +88,12 @@ PlasmaCore.ColorScope {
         visible: false
     }
 
+
     MouseArea {
         id: lockScreenRoot
 
         property bool uiVisible: true
-        property bool blockUI: false
+        property bool blockUI: mainStack.depth > 1 || mainBlock.mainPasswordBox.text.length > 0 || inputPanel.keyboardActive
 
         x: parent.x
         y: parent.y
@@ -101,23 +103,27 @@ PlasmaCore.ColorScope {
         drag.filterChildren: true
         onPressed: uiVisible = true;
         onPositionChanged: uiVisible = true;
-        //onUiVisibleChanged: {
-            //if (blockUI) {
-                //fadeoutTimer.running = false;
-            //} else if (uiVisible) {
-                //fadeoutTimer.restart();
-            //}
-        //}
-        //onBlockUIChanged: {
-            //if (blockUI) {
-                //fadeoutTimer.running = false;
-                //uiVisible = true;
-            //} else {
-                //fadeoutTimer.restart();
-            //}
-        //}
+        onUiVisibleChanged: {
+            if (blockUI) {
+                fadeoutTimer.running = false;
+            } else if (uiVisible) {
+                fadeoutTimer.restart();
+            }
+        }
+        onBlockUIChanged: {
+            if (blockUI) {
+                fadeoutTimer.running = false;
+                uiVisible = true;
+            } else {
+                fadeoutTimer.restart();
+            }
+        }
         Keys.onEscapePressed: {
-            uiVisible = !uiVisible;
+            if (showClock) {
+                uiVisible = !uiVisible;
+            } else {
+                uiVisible = true;
+            }
             if (inputPanel.keyboardActive) {
                 inputPanel.showHide();
             }
@@ -129,17 +135,17 @@ PlasmaCore.ColorScope {
             uiVisible = true;
             event.accepted = false;
         }
-        //Timer {
-            //id: fadeoutTimer
-            //interval: 10000
-            //onTriggered: {
-                //if (!lockScreenRoot.blockUI) {
-                    //lockScreenRoot.uiVisible = false;
-                //}
-            //}
-        //}
+        Timer {
+            id: fadeoutTimer
+            interval: 10000
+            onTriggered: {
+                if (!lockScreenRoot.blockUI && showClock) {
+                    lockScreenRoot.uiVisible = false;
+                }
+            }
+        }
 
-        Component.onCompleted: PropertyAnimation { id: launchAnimation; target: lockScreenRoot; property: "opacity"; from: 0; to: 1; duration: PlasmaCore.Units.veryLongDuration * 2 }
+        Component.onCompleted: fadeoutTimer.restart()
 
         states: [
             State {
@@ -170,51 +176,44 @@ PlasmaCore.ColorScope {
             }
         }
 
-//         WallpaperFader {
-//             anchors.fill: parent
-//             state: lockScreenRoot.uiVisible ? "on" : "off"
+        WallpaperFader {
+            anchors.fill: parent
+            state: lockScreenRoot.uiVisible ? "on" : "off"
 //             source: wallpaper
-//             mainStack: mainStack
-//             footer: footer
-//             clock: clock
-//         }
-
-        DropShadow {
-            id: clockShadow
-            anchors.fill: clock
-            source: clock
-            visible: !softwareRendering
-            horizontalOffset: 1
-            verticalOffset: 1
-            radius: 6
-            samples: 14
-            spread: 0.3
-                                                  // Soften the color a bit so it doesn't look so stark against light backgrounds
-            color: lockScreenUi.lightBackground ? Qt.rgba(PlasmaCore.ColorScope.backgroundColor.r,
-                                                          PlasmaCore.ColorScope.backgroundColor.g,
-                                                          PlasmaCore.ColorScope.backgroundColor.b,
-                                                          0.6)
-                                                : "black" // black matches Breeze window decoration and desktopcontainment
-            Behavior on opacity {
-                OpacityAnimator {
-                    duration: PlasmaCore.Units.veryLongDuration * 2
-                    easing.type: Easing.InOutQuad
-                }
-            }
+            mainStack: mainStack
+            footer: footer
+            clock: clock
+            clockcenter: clockcenter
+            battery: battery
+            ferenOSLogo: ferenOSLogo
+            mediaControls: mediaControls
+            mediaAlbumArt: mediaAlbumArt
         }
 
         Clock {
             id: clock
-            property Item shadow: clockShadow
             y: height / 2.5
             anchors {
                 left: parent.left
                 top: parent.top
             }
-            anchors.leftMargin: 30
-            anchors.topMargin: 22
+            anchors.leftMargin:  PlasmaCore.Units.smallSpacing * 6
+            anchors.topMargin:  PlasmaCore.Units.smallSpacing * 6
             visible: y > 0
             Layout.alignment: Qt.AlignBaseline
+        }
+
+        Loader {
+            id: clockcenter
+            y: height / 2.5
+            anchors {
+                verticalCenter: parent.verticalCenter
+                horizontalCenter: parent.horizontalCenter
+            }
+            visible: y > 0
+            Layout.alignment: Qt.AlignBaseline
+            source: "ClockCenter.qml"
+            active: showClock
         }
 
         ListModel {
@@ -277,16 +276,6 @@ PlasmaCore.ColorScope {
                     sessionsModel.startNewSession(true /* lock the screen too */)
                     lockScreenRoot.state = ''
                 }
-
-
-
-                Loader {
-                    Layout.topMargin: PlasmaCore.Units.smallSpacing // some distance to the password field
-                    Layout.fillWidth: true
-                    Layout.preferredHeight: item ? item.implicitHeight : 0
-                    active: config.showMediaControls
-                    source: "MediaControls.qml"
-                }
             }
 
             Component.onCompleted: {
@@ -326,7 +315,7 @@ PlasmaCore.ColorScope {
                     name: "visible"
                     PropertyChanges {
                         target: mainStack
-                        y: Math.min(0, lockScreenRoot.height - inputPanel.height - mainBlock.visibleBoundary)
+                        y: Math.min(0, lockScreenRoot.height - inputPanel.height - mainBlock.height/2)
                     }
                     PropertyChanges {
                         target: inputPanel
@@ -415,13 +404,63 @@ PlasmaCore.ColorScope {
             }
         }
 
+        Image {
+            id: ferenOSLogo
+            height: Math.min(PlasmaCore.Units.gridUnit * 1.8)
+            fillMode: Image.PreserveAspectFit
+            anchors {
+                bottom: parent.bottom
+                horizontalCenter: parent.horizontalCenter
+                bottomMargin:  PlasmaCore.Units.smallSpacing * 8
+            }
+            source: "../components/artwork/watermark.png"
+            mipmap: true
+        }
+
+        Loader {
+            id: mediaControls
+            anchors {
+                bottom: parent.bottom
+                left: parent.left
+                margins:  PlasmaCore.Units.smallSpacing * 6
+            }
+            Layout.preferredHeight: mediaAlbumArt.preferredHeight
+            active: config.showMediaControls
+            source: "MediaControls.qml"
+        }
+
+        Loader {
+            id: mediaAlbumArt
+            anchors {
+                bottom: parent.bottom
+                bottomMargin:  PlasmaCore.Units.smallSpacing * 6
+            }
+
+            x: mediaControls.x + mediaControls.width + PlasmaCore.Units.smallSpacing * 4
+            width: ferenOSLogo.x - PlasmaCore.Units.smallSpacing * 8 - mediaControls.x
+            Layout.fillWidth: true
+            Layout.preferredHeight: item ? item.implicitHeight : 0
+            active: config.showMediaControls
+            source: "MediaAlbumArt.qml"
+        }
+
+        Loader {
+            id: battery
+            anchors {
+                bottom: parent.bottom
+                right: parent.right
+                margins:  PlasmaCore.Units.smallSpacing * 6
+            }
+            source: "../components/Battery.qml"
+            active: showClock
+        }
+
         RowLayout {
             id: footer
             anchors {
                 bottom: parent.bottom
-                left: parent.left
                 right: parent.right
-                margins: PlasmaCore.Units.smallSpacing
+                margins:  PlasmaCore.Units.smallSpacing * 6
             }
 
             PlasmaComponents3.ToolButton {
@@ -453,12 +492,6 @@ PlasmaCore.ColorScope {
 
                 visible: keyboardLayoutSwitcher.hasMultipleKeyboardLayouts
             }
-
-            Item {
-                Layout.fillWidth: true
-            }
-
-            Battery {}
         }
     }
 

@@ -37,20 +37,21 @@ Row {
         connectedSources: ["Battery", "AC Adapter"]
     }
 
+    PlasmaComponents3.Label {
+        id: batteryLabel
+        font.pointSize: row.fontSize
+        text: i18nd("plasma_lookandfeel_org.kde.lookandfeel","%1%", battery.percent)
+        Accessible.name: i18nd("plasma_lookandfeel_org.kde.lookandfeel","Battery at %1%", battery.percent)
+        anchors.verticalCenter: battery.verticalCenter
+    }
+
     PW.BatteryIcon {
         id: battery
         hasBattery: pmSource.data["Battery"]["Has Battery"] || false
         percent: pmSource.data["Battery"]["Percent"] || 0
         pluggedIn: pmSource.data["AC Adapter"] ? pmSource.data["AC Adapter"]["Plugged in"] : false
 
-        height: batteryLabel.height
+        height: PlasmaCore.Units.iconSizes.smallMedium
         width: height
-    }
-
-    PlasmaComponents3.Label {
-        id: batteryLabel
-        font.pointSize: row.fontSize
-        text: i18nd("plasma_lookandfeel_org.kde.lookandfeel","%1%", battery.percent)
-        Accessible.name: i18nd("plasma_lookandfeel_org.kde.lookandfeel","Battery at %1%", battery.percent)
     }
 }

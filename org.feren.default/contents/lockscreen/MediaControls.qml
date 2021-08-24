@@ -27,7 +27,7 @@ import org.kde.plasma.extras 2.0 as PlasmaExtras
 Item {
     visible: mpris2Source.hasPlayer
     implicitHeight: PlasmaCore.Units.gridUnit * 3
-    implicitWidth: PlasmaCore.Units.gridUnit * 16
+    implicitWidth: PlasmaCore.Units.gridUnit*7 // 2 + 2 + 3
 
     RowLayout {
         id: controlsRow
@@ -49,28 +49,6 @@ Item {
             readonly property bool canGoBack: hasPlayer && playerData.CanGoPrevious
             readonly property bool canGoNext: hasPlayer && playerData.CanGoNext
 
-            readonly property var currentMetadata: hasPlayer ? playerData.Metadata : ({})
-
-            readonly property string track: {
-                var xesamTitle = currentMetadata["xesam:title"]
-                if (xesamTitle) {
-                    return xesamTitle
-                }
-                // if no track title is given, print out the file name
-                var xesamUrl = currentMetadata["xesam:url"] ? currentMetadata["xesam:url"].toString() : ""
-                if (!xesamUrl) {
-                    return ""
-                }
-                var lastSlashPos = xesamUrl.lastIndexOf('/')
-                if (lastSlashPos < 0) {
-                    return ""
-                }
-                var lastUrlPart = xesamUrl.substring(lastSlashPos + 1)
-                return decodeURIComponent(lastUrlPart)
-            }
-            readonly property string artist: currentMetadata["xesam:artist"] || ""
-            readonly property string albumArt: currentMetadata["mpris:artUrl"] || ""
-
             engine: "mpris2"
             connectedSources: [source]
 
@@ -88,48 +66,6 @@ Item {
             }
             function playPause(source) {
                 startOperation("PlayPause");
-            }
-        }
-
-        Image {
-            id: albumArt
-            Layout.preferredWidth: height
-            Layout.fillHeight: true
-            asynchronous: true
-            fillMode: Image.PreserveAspectFit
-            source: mpris2Source.albumArt
-            sourceSize.height: height
-            visible: status === Image.Loading || status === Image.Ready
-        }
-
-        Item { // spacer
-            width: PlasmaCore.Units.smallSpacing
-            height: 1
-        }
-
-        ColumnLayout {
-            Layout.fillWidth: true
-            spacing: 0
-
-            PlasmaComponents3.Label {
-                Layout.fillWidth: true
-                wrapMode: Text.NoWrap
-                elide: Text.ElideRight
-                text: mpris2Source.track || i18nd("plasma_lookandfeel_org.kde.lookandfeel", "No media playing")
-                textFormat: Text.PlainText
-                font.pointSize: PlasmaCore.Theme.defaultFont.pointSize + 1
-                maximumLineCount: 1
-            }
-
-            PlasmaExtras.DescriptiveLabel {
-                Layout.fillWidth: true
-                wrapMode: Text.NoWrap
-                elide: Text.ElideRight
-                // if no artist is given, show player name instead
-                text: mpris2Source.artist || mpris2Source.identity || ""
-                textFormat: Text.PlainText
-                font.pointSize: PlasmaCore.Theme.smallestFont.pointSize + 1
-                maximumLineCount: 1
             }
         }
 

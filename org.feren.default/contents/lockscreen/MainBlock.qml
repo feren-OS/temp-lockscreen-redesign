@@ -76,7 +76,7 @@ Item {
             verticalCenter: parent.verticalCenter
             rightMargin: PlasmaCore.Units.largeSpacing
         }
-        font.pointSize: Math.max(1.6 * theme.defaultFont.pointSize)
+        font.pointSize: 2 * theme.defaultFont.pointSize
         height: implicitHeight // work around stupid bug in Plasma Components that sets the height
         text: kscreenlocker_userName
         style: softwareRendering ? Text.Outline : Text.Normal
@@ -104,12 +104,12 @@ Item {
         anchors {
             left: ferenuserPicture.right
             leftMargin: PlasmaCore.Units.largeSpacing
-            verticalCenter: parent.verticalCenter
         }
+        y: parent.height/2 - (2 * PlasmaCore.Units.smallSpacing)
 
         PlasmaComponents3.TextField {
             id: passwordBox
-            font.pointSize: PlasmaCore.Theme.defaultFont.pointSize + 1
+            font.pointSize: PlasmaCore.Theme.defaultFont.pointSize
             Layout.fillWidth: true
 
             placeholderText: i18nd("plasma_lookandfeel_org.kde.lookandfeel", "Password")
@@ -119,6 +119,7 @@ Item {
             enabled: !authenticator.graceLocked
             revealPasswordButtonShown: true
             height: implicitHeight
+            implicitWidth: PlasmaCore.Units.gridUnit * 10
 
             // In Qt this is implicitly active based on focus rather than visibility
             // in any other application having a focussed invisible object would be weird
@@ -153,31 +154,34 @@ Item {
         }
     }
 
-    ColumnLayout {
+    PlasmaComponents3.ToolButton {
+        id: switchuserButton
+        Accessible.name: i18nd("plasma_lookandfeel_org.kde.lookandfeel", "Switch User")
+        text: i18nd("plasma_lookandfeel_org.kde.lookandfeel", "Switch User")
+        Layout.preferredHeight: passwordBox.implicitHeight
+        onClicked: switchUser()
         anchors {
             top: passwordControls.bottom
             topMargin: PlasmaCore.Units.smallSpacing
             left: passwordControls.left
         }
+    }
 
-        PlasmaComponents3.Label {
-            id: notificationsLabel
-            font.pointSize: root.fontSize
-            Layout.maximumWidth: PlasmaCore.Units.gridUnit * 16
-            Layout.alignment: Qt.AlignHCenter
-            Layout.fillWidth: true
-            horizontalAlignment: Text.AlignHCenter
-            wrapMode: Text.WordWrap
-            font.italic: true
-            visible: text != "" ? true : false
-        }
 
-        PlasmaComponents3.ToolButton {
-            id: switchuserButton
-            Accessible.name: i18nd("plasma_lookandfeel_org.kde.lookandfeel", "Switch User")
-            text: i18nd("plasma_lookandfeel_org.kde.lookandfeel", "Switch User")
-            Layout.preferredHeight: passwordBox.implicitHeight
-            onClicked: switchUser()
+    PlasmaComponents3.Label {
+        id: notificationsLabel
+        font.pointSize: PlasmaCore.Theme.defaultFont.pointSize
+        Layout.maximumWidth: PlasmaCore.Units.gridUnit * 16
+        Layout.alignment: Qt.AlignHCenter
+        Layout.fillWidth: true
+        horizontalAlignment: Text.AlignHCenter
+        wrapMode: Text.WordWrap
+        visible: text != "" ? true : false
+        anchors {
+            top: switchuserButton.bottom
+            topMargin: PlasmaCore.Units.smallSpacing * 2
+            left: passwordControls.left
+            leftMargin: PlasmaCore.Units.smallSpacing
         }
     }
 }
