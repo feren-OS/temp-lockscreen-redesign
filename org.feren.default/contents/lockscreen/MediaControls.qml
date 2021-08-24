@@ -27,7 +27,7 @@ import org.kde.plasma.extras 2.0 as PlasmaExtras
 Item {
     visible: mpris2Source.hasPlayer
     implicitHeight: PlasmaCore.Units.gridUnit * 3
-    implicitWidth: PlasmaCore.Units.gridUnit*7 // 2 + 2 + 3
+    implicitWidth: controlsRow.implicitWidth
 
     RowLayout {
         id: controlsRow
